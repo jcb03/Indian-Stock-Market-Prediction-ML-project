@@ -20,7 +20,7 @@ class UpstoxDataFetcher:
         if not self.configuration.access_token:
             raise ValueError("UPSTOX_ACCESS_TOKEN not found in environment variables")
         
-        # Initialize API clients with CORRECT class names
+        # CORRECTED: Use the proper API class names from the official SDK
         api_client = upstox_client.ApiClient(self.configuration)
         self.history_api = upstox_client.HistoryApi(api_client)  # NOT HistoryV3Api
         self.market_quote_api = upstox_client.MarketQuoteApi(api_client)  # NOT MarketQuoteV3Api
@@ -74,7 +74,7 @@ class UpstoxDataFetcher:
         except Exception as e:
             logger.error(f"Error loading instruments: {e}")
             
-        # Fallback instruments (these are validated and working)
+        # Fallback instruments (validated and working)
         return {
             "RELIANCE": "NSE_EQ|INE002A01018",
             "TCS": "NSE_EQ|INE467B01029",
@@ -110,10 +110,11 @@ class UpstoxDataFetcher:
                 raise ValueError(f"Instrument key not found for {symbol}")
             
             if self.is_market_open():
-                # Try to get live quote with CORRECT method signature
+                # Try to get live quote with CORRECT method signature from search results
                 try:
-                    # CORRECTED: api_version as FIRST positional argument
-                    response = self.market_quote_api.ltp("2.0", instrument_key)
+                    # Based on search results: method signature includes api_version parameter
+                    api_version = "2.0"
+                    response = self.market_quote_api.ltp(instrument_key, api_version)
                     
                     if response.status == 'success' and response.data and instrument_key in response.data:
                         price = response.data[instrument_key].last_price
@@ -156,13 +157,10 @@ class UpstoxDataFetcher:
             to_date = datetime.now().strftime('%Y-%m-%d')
             from_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
             
-            # CORRECTED: api_version as FIRST positional argument
+            # CORRECTED: Based on search results, proper method signature
+            api_version = "2.0"
             api_response = self.history_api.get_historical_candle_data1(
-                "2.0",          # api_version (FIRST argument)
-                instrument_key, # instrument_key
-                interval,       # interval
-                to_date,        # to_date
-                from_date       # from_date
+                instrument_key, interval, to_date, from_date, api_version
             )
             
             if api_response.status == 'success' and api_response.data and api_response.data.candles:
@@ -197,12 +195,8 @@ class UpstoxDataFetcher:
             if not instrument_key:
                 raise ValueError(f"Instrument key not found for {symbol}")
             
-            # CORRECTED: api_version as FIRST positional argument
-            api_response = self.market_quote_api.get_market_quote_ohlc(
-                "2.0",          # api_version (FIRST argument)
-                instrument_key, # symbol
-                "1d"           # interval
-            )
+            # Based on search results: proper method call
+            api_response = self.market_quote_api.get_market_quote_ohlc(instrument_key)
             
             if api_response.status == 'success' and api_response.data and instrument_key in api_response.data:
                 ohlc_data = api_response.data[instrument_key].ohlc
@@ -256,8 +250,9 @@ class UpstoxDataFetcher:
             test_symbol = list(self.nifty_50_instruments.keys())[0]
             test_instrument = self.nifty_50_instruments[test_symbol]
             
-            # CORRECTED: api_version as FIRST positional argument
-            response = self.market_quote_api.ltp("2.0", test_instrument)
+            # Test connection using proper method signature
+            api_version = "2.0"
+            response = self.market_quote_api.ltp(test_instrument, api_version)
             
             return response.status == 'success'
             
