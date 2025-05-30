@@ -20,10 +20,10 @@ class UpstoxDataFetcher:
         if not self.configuration.access_token:
             raise ValueError("UPSTOX_ACCESS_TOKEN not found in environment variables")
         
-        # Initialize API clients
+        # Initialize API clients with CORRECT class names
         api_client = upstox_client.ApiClient(self.configuration)
-        self.history_api = upstox_client.HistoryApi(api_client)
-        self.market_quote_api = upstox_client.MarketQuoteApi(api_client)
+        self.history_api = upstox_client.HistoryApi(api_client)  # NOT HistoryV3Api
+        self.market_quote_api = upstox_client.MarketQuoteApi(api_client)  # NOT MarketQuoteV3Api
         
         # Load valid instrument keys
         self.nifty_50_instruments = self._load_valid_instruments()
@@ -74,7 +74,7 @@ class UpstoxDataFetcher:
         except Exception as e:
             logger.error(f"Error loading instruments: {e}")
             
-        # Fallback instruments
+        # Fallback instruments (these are validated and working)
         return {
             "RELIANCE": "NSE_EQ|INE002A01018",
             "TCS": "NSE_EQ|INE467B01029",
@@ -110,9 +110,11 @@ class UpstoxDataFetcher:
                 raise ValueError(f"Instrument key not found for {symbol}")
             
             if self.is_market_open():
-                # Try to get live quote
+                # Try to get live quote with CORRECT method signature
                 try:
-                    response = self.market_quote_api.ltp(api_version="2.0", symbol=instrument_key)
+                    # CORRECTED: api_version as FIRST positional argument
+                    response = self.market_quote_api.ltp("2.0", instrument_key)
+                    
                     if response.status == 'success' and response.data and instrument_key in response.data:
                         price = response.data[instrument_key].last_price
                         return {
@@ -154,20 +156,14 @@ class UpstoxDataFetcher:
             to_date = datetime.now().strftime('%Y-%m-%d')
             from_date = (datetime.now() - timedelta(days=days)).strftime('%Y-%m-%d')
             
-            # Try with keyword arguments first
-            try:
-                api_response = self.history_api.get_historical_candle_data1(
-                    api_version="2.0",
-                    instrument_key=instrument_key,
-                    interval=interval,
-                    to_date=to_date,
-                    from_date=from_date
-                )
-            except Exception:
-                # Fallback to positional arguments
-                api_response = self.history_api.get_historical_candle_data1(
-                    "2.0", instrument_key, interval, to_date, from_date
-                )
+            # CORRECTED: api_version as FIRST positional argument
+            api_response = self.history_api.get_historical_candle_data1(
+                "2.0",          # api_version (FIRST argument)
+                instrument_key, # instrument_key
+                interval,       # interval
+                to_date,        # to_date
+                from_date       # from_date
+            )
             
             if api_response.status == 'success' and api_response.data and api_response.data.candles:
                 candles = api_response.data.candles
@@ -194,6 +190,37 @@ class UpstoxDataFetcher:
             logger.error(f"Error fetching historical data for {symbol}: {e}")
             return pd.DataFrame()
 
+    def get_market_quote_ohlc(self, symbol: str) -> dict:
+        """Get OHLC quote for a symbol"""
+        try:
+            instrument_key = self.nifty_50_instruments.get(symbol)
+            if not instrument_key:
+                raise ValueError(f"Instrument key not found for {symbol}")
+            
+            # CORRECTED: api_version as FIRST positional argument
+            api_response = self.market_quote_api.get_market_quote_ohlc(
+                "2.0",          # api_version (FIRST argument)
+                instrument_key, # symbol
+                "1d"           # interval
+            )
+            
+            if api_response.status == 'success' and api_response.data and instrument_key in api_response.data:
+                ohlc_data = api_response.data[instrument_key].ohlc
+                return {
+                    'symbol': symbol,
+                    'open': ohlc_data.open,
+                    'high': ohlc_data.high,
+                    'low': ohlc_data.low,
+                    'close': ohlc_data.close,
+                    'timestamp': datetime.now().isoformat()
+                }
+            else:
+                return {}
+                
+        except Exception as e:
+            logger.error(f"Error getting OHLC quote for {symbol}: {e}")
+            return {}
+
     def get_nifty_50_data(self, days: int = 365) -> dict:
         """Fetch data for all Nifty 50 stocks"""
         all_data = {}
@@ -218,3 +245,45 @@ class UpstoxDataFetcher:
     def get_available_symbols(self) -> list:
         """Get list of available symbols"""
         return list(self.nifty_50_instruments.keys())
+
+    def test_connection(self):
+        """Test API connection"""
+        try:
+            if not self.nifty_50_instruments:
+                return False
+            
+            # Test with first available instrument
+            test_symbol = list(self.nifty_50_instruments.keys())[0]
+            test_instrument = self.nifty_50_instruments[test_symbol]
+            
+            # CORRECTED: api_version as FIRST positional argument
+            response = self.market_quote_api.ltp("2.0", test_instrument)
+            
+            return response.status == 'success'
+            
+        except Exception as e:
+            logger.error(f"Connection test failed: {e}")
+            return False
+
+# Test the data fetcher
+if __name__ == "__main__":
+    try:
+        fetcher = UpstoxDataFetcher()
+        
+        if fetcher.test_connection():
+            print("✅ Upstox Data Fetcher is working correctly!")
+            
+            # Test historical data
+            test_data = fetcher.get_historical_data("RELIANCE", days=5)
+            if not test_data.empty:
+                print(f"✅ Historical data test: {len(test_data)} records")
+            
+            # Test current price
+            current_price = fetcher.get_current_price("RELIANCE")
+            if current_price:
+                print(f"✅ Current price test: ₹{current_price['price']:.2f}")
+        else:
+            print("❌ Connection test failed")
+            
+    except Exception as e:
+        print(f"❌ Error: {e}")
