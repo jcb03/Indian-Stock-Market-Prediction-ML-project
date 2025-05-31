@@ -266,7 +266,7 @@ if __name__ == "__main__":
         fetcher = UpstoxDataFetcher()
         
         if fetcher.test_connection():
-            print("✅ Upstox Data Fetcher is working correctly!")
+            print("✅ Data Fetcher is working correctly!")
             
             # Test historical data
             test_data = fetcher.get_historical_data("RELIANCE", days=5)
