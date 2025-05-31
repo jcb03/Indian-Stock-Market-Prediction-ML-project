@@ -2049,16 +2049,16 @@ wheels = [
 
 [[package]]
 name = "seaborn"
-version = "0.13.0"
+version = "0.13.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "matplotlib" },
     { name = "numpy" },
     { name = "pandas" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/06/6f/caf0741c5787358b0efba3b4db7f8235e3a48e719ad2444bbd51485f966c/seaborn-0.13.0.tar.gz", hash = "sha256:0e76abd2ec291c655b516703c6a022f0fd5afed26c8e714e8baef48150f73598", size = 1455480, upload-time = "2023-09-29T18:58:36.099Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/86/59/a451d7420a77ab0b98f7affa3a1d78a313d2f7281a57afb1a34bae8ab412/seaborn-0.13.2.tar.gz", hash = "sha256:93e60a40988f4d65e9f4885df477e2fdaff6b73a9ded434c1ab356dd57eefff7", size = 1457696, upload-time = "2024-01-25T13:21:52.551Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7b/e5/83fcd7e9db036c179e0352bfcd20f81d728197a16f883e7b90307a88e65e/seaborn-0.13.0-py3-none-any.whl", hash = "sha256:70d740828c48de0f402bb17234e475eda687e3c65f4383ea25d0cc4728f7772e", size = 294583, upload-time = "2023-09-29T18:58:33.429Z" },
+    { url = "https://files.pythonhosted.org/packages/83/11/00d3c3dfc25ad54e731d91449895a79e4bf2384dc3ac01809010ba88f6d5/seaborn-0.13.2-py3-none-any.whl", hash = "sha256:636f8336facf092165e27924f223d3c62ca560b1f2bb5dff7ab7fad265361987", size = 294914, upload-time = "2024-01-25T13:21:49.598Z" },
 ]
 
 [[package]]
@@ -2179,7 +2179,7 @@ requires-dist = [
     { name = "python-multipart", specifier = "==0.0.9" },
     { name = "requests", specifier = "==2.31.0" },
     { name = "scikit-learn", specifier = "==1.6.1" },
-    { name = "seaborn", specifier = "==0.13.0" },
+    { name = "seaborn", specifier = "==0.13.2" },
     { name = "streamlit", specifier = "==1.34.0" },
     { name = "tensorflow", specifier = "==2.16.1" },
     { name = "upstox-python-sdk", specifier = "==2.14.0" },
